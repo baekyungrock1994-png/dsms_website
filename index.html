@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>대성중학교 수업 도구 나눔터</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#/">
+      <span class="brand-text">대성중학교 수업 도구 나눔터</span>
+    </a>
+    <nav class="nav" aria-label="주 메뉴">
+      <a href="#/" data-nav="home">둘러보기</a>
+      <a href="#/mine" data-nav="mine">내 도구</a>
+    </nav>
+    <div class="header-actions">
+      <button id="user-btn" class="btn btn-ghost btn-sm" type="button">로그인</button>
+      <a class="btn btn-primary" href="#/upload">＋ 도구 올리기</a>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <footer class="site-footer">
+    <img src="assets/logo.png" alt="대성중학교 DAESUNG MIDDLE SCHOOL" width="224" height="47">
+    <div>대성중학교 교직원용 · 초안(체험용): 올린 내용은 이 브라우저에만 저장됩니다 · <a href="#/admin">관리자</a></div>
+  </footer>
+
+  <dialog id="name-dialog">
+    <form id="login-form" novalidate>
+      <h3>선생님 로그인</h3>
+      <p id="login-help" class="muted"></p>
+      <label class="field"><span>성함</span>
+        <input id="name-input" type="text" maxlength="20" autocomplete="off" placeholder="예: 홍길동"></label>
+      <div id="step-password" hidden>
+        <label class="field"><span>비밀번호</span>
+          <input id="pw-input" type="password" autocomplete="off"></label>
+      </div>
+      <div id="step-setup" hidden>
+        <label class="field"><span>가입 코드 (학교 공용)</span>
+          <input id="code-input" type="password" autocomplete="off"></label>
+        <label class="field"><span>새 비밀번호 (6자 이상)</span>
+          <input id="new-pw-input" type="password" autocomplete="new-password"></label>
+        <label class="field"><span>새 비밀번호 확인</span>
+          <input id="new-pw2-input" type="password" autocomplete="new-password"></label>
+      </div>
+      <p id="login-error" class="error" role="alert" hidden></p>
+      <div class="row end">
+        <button id="login-cancel" class="btn" type="button">취소</button>
+        <button id="login-submit" class="btn btn-primary" type="submit">다음</button>
+      </div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/seed.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
