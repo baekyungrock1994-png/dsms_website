@@ -29,7 +29,7 @@
 
   <footer class="site-footer">
     <img src="assets/logo.png" alt="대성중학교 DAESUNG MIDDLE SCHOOL" width="224" height="47">
-    <div>대성중학교 교직원용 · 초안(체험용): 올린 내용은 이 브라우저에만 저장됩니다 · <a href="#/admin">관리자</a></div>
+    <div>대성중학교 교직원용<span id="demo-note"> · 초안(체험용): 올린 내용은 이 브라우저에만 저장됩니다</span> · <a href="#/admin">관리자</a></div>
   </footer>
 
   <dialog id="name-dialog">
@@ -59,8 +59,10 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
+  <script src="js/config.js"></script>
   <script src="js/seed.js"></script>
   <script src="js/store.js"></script>
+  <script src="js/store-supabase.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

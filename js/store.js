@@ -50,6 +50,8 @@ window.Store = (function () {
   };
 
   return {
+    mode: 'local', // 서버에 연결되면 js/store-supabase.js가 Store를 통째로 바꾸고 mode는 'server'가 됩니다.
+
     /* ----- 로그인 ----- */
     getUser: () => read(K.user, ''),
     // 'unknown'(등록되지 않은 성함) | 'new'(아직 비밀번호를 정하지 않음) | 'active'
@@ -74,7 +76,11 @@ window.Store = (function () {
 
     /* ----- 관리자 ----- */
     async checkAdmin(password) { return password === DEMO_ADMIN_PASSWORD; },
-    async listTeachers() { return teachers(); },
+    // [{ name, active }] — active는 비밀번호를 정했는지
+    async listAccounts() {
+      const pw = read(K.passwords, {});
+      return teachers().map((name) => ({ name, active: Boolean(pw[name]) }));
+    },
     // 명단에서 빠진 선생님의 비밀번호도 함께 지웁니다.
     async setTeachers(names) {
       const kept = Object.fromEntries(Object.entries(read(K.passwords, {})).filter(([n]) => names.includes(n)));

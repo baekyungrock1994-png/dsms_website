@@ -55,6 +55,7 @@
     password: '비밀번호를 입력하세요. 잊으셨다면 관리자에게 초기화를 요청하세요.',
     setup: '처음 오셨네요. 학교에서 안내한 가입 코드를 넣고, 앞으로 쓸 내 비밀번호를 정하세요.',
   };
+  const LOCKED = '여러 번 틀려서 잠시 잠겼습니다. 5분 뒤에 다시 시도해 주세요.';
   let loginStep = 'name';
   function setStep(step) {
     loginStep = step;
@@ -77,14 +78,16 @@
         return setStep(st === 'new' ? 'setup' : 'password');
       }
       if (loginStep === 'password') {
-        if (await Store.login(name, pwInput.value) === 'ok') return nameDialog.close();
-        return loginFail('비밀번호가 맞지 않습니다.');
+        const result = await Store.login(name, pwInput.value);
+        if (result === 'ok') return endLogin();
+        return loginFail(result === 'locked' ? LOCKED : '비밀번호가 맞지 않습니다.');
       }
       const pw1 = byId('new-pw-input').value;
       if (pw1 !== byId('new-pw2-input').value) return loginFail('새 비밀번호 두 칸이 서로 다릅니다.');
       const result = await Store.register(name, byId('code-input').value, pw1);
-      if (result === 'ok') return nameDialog.close();
-      loginFail(result === 'code' ? '가입 코드가 맞지 않습니다.'
+      if (result === 'ok') return endLogin();
+      loginFail(result === 'locked' ? LOCKED
+        : result === 'code' ? '가입 코드가 맞지 않습니다.'
         : result === 'short' ? '비밀번호는 6자 이상으로 정해 주세요.'
         : '이미 비밀번호를 정한 성함입니다. 처음부터 다시 시도해 주세요.');
     } catch (err) {
@@ -92,14 +95,24 @@
       loginFail('확인하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
     }
   });
-  byId('login-cancel').addEventListener('click', () => nameDialog.close());
+  // 로그인 창을 닫고 결과를 알립니다. 성공·취소 때 직접 부르고, Esc로 닫힌 경우는 close 이벤트로 받습니다.
+  let loginResolve = null;
+  function endLogin() {
+    if (nameDialog.open) nameDialog.close();
+    paintUser();
+    const resolve = loginResolve;
+    loginResolve = null;
+    if (resolve) resolve(Store.getUser() || null);
+  }
+  nameDialog.addEventListener('close', endLogin);
+  byId('login-cancel').addEventListener('click', endLogin);
   // 로그인에 성공하면 이름, 취소하면 null
   function askName() {
     return new Promise((resolve) => {
+      loginResolve = resolve;
       byId('login-form').reset();
       nameDialog.showModal();
       setStep('name');
-      nameDialog.addEventListener('close', () => { paintUser(); resolve(Store.getUser() || null); }, { once: true });
     });
   }
   const requireName = async () => Store.getUser() || askName();
@@ -542,9 +555,16 @@
           h('div', { class: 'row end' }, h('button', { class: 'btn btn-primary', type: 'submit' }, '들어가기'))));
     }
     const names = h('textarea', { rows: 12, placeholder: '한 줄에 한 분씩 적거나, 엑셀의 이름 열을 그대로 붙여 넣으세요.' });
-    const [teachers, reports, tools] = await Promise.all([Store.listTeachers(), Store.listReports(), Store.listTools()]);
-    const states = await Promise.all(teachers.map((name) => Store.accountState(name)));
-    names.value = teachers.join('\n');
+    let accounts, reports, tools;
+    try {
+      [accounts, reports, tools] = await Promise.all([Store.listAccounts(), Store.listReports(), Store.listTools()]);
+    } catch (err) {
+      // 관리자 로그인 기한이 지났으면 비밀번호부터 다시 받습니다.
+      if (err.message !== 'auth') throw err;
+      adminUnlocked = false;
+      return viewAdmin();
+    }
+    names.value = accounts.map((a) => a.name).join('\n');
     return h('div', { class: 'narrow' },
       h('h1', {}, '관리자'),
       h('form', {
@@ -562,8 +582,7 @@
       h('section', { class: 'panel' },
         h('h2', {}, '비밀번호 초기화'),
         h('p', { class: 'muted' }, '비밀번호를 잊은 선생님을 초기화하면, 가입 코드로 새 비밀번호를 다시 정할 수 있습니다.'),
-        h('ul', { class: 'acct-list' }, teachers.map((name, i) => {
-          const active = states[i] === 'active';
+        h('ul', { class: 'acct-list' }, accounts.map(({ name, active }) => {
           return h('li', {},
             h('span', {}, name),
             h('span', { class: 'muted' }, active ? '비밀번호 정함' : '아직 로그인 전'),
@@ -618,6 +637,7 @@
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', route);
+  document.getElementById('demo-note').hidden = Store.mode === 'server';
   paintUser();
   route();
 })();
