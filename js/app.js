@@ -284,7 +284,7 @@
       } catch (err) { failed(err); }
     });
     paint();
-    const isMine = !t.sample && Store.getUser() === t.author;
+    const isMine = !t.sample && (Store.getUser() === t.author || adminUnlocked);
 
     const fbText = h('textarea', { rows: 4, required: true, maxlength: 1000, placeholder: '예: 문제 글씨가 조금 더 컸으면 좋겠어요. / 3학년 단원도 추가되면 좋겠어요.' });
     const fbForm = h('form', {
@@ -358,13 +358,15 @@
   }
 
   /* ---------- 도구 올리기 · 고치기 ---------- */
-  // editId가 있으면 이미 올린 도구를 고치는 화면입니다(내가 올린 도구만).
+  // editId가 있으면 이미 올린 도구를 고치는 화면입니다(내가 올린 도구, 또는 관리자).
   async function viewUpload(editId) {
     let editing = null;
+    let byAdmin = false; // 관리자 권한으로 남의 도구를 고치는 중
     if (editId) {
       editing = await Store.getTool(editId);
       if (!editing) return notFound();
-      if (editing.sample || editing.author !== Store.getUser()) {
+      byAdmin = adminUnlocked && editing.author !== Store.getUser();
+      if (editing.sample || (editing.author !== Store.getUser() && !adminUnlocked)) {
         return h('div', { class: 'empty-state' },
           h('p', {}, '내가 올린 도구만 고칠 수 있습니다. 올린 분의 성함으로 로그인해 주세요.'),
           h('a', { class: 'btn btn-primary', href: '#/tool/' + editId }, '도구로 돌아가기'));
@@ -460,7 +462,8 @@
         const url = urlInput.value.trim();
         if (kind === 'html' && !html) return toast('HTML 파일을 넣어 주세요.');
         if (kind === 'link' && !/^https?:\/\/\S+$/i.test(url)) return toast('http:// 또는 https:// 로 시작하는 주소를 적어 주세요.');
-        const author = await requireName();
+        // 관리자가 고칠 때는 선생님 로그인을 묻지 않습니다. 만든 사람은 그대로 남습니다.
+        const author = byAdmin ? editing.author : await requireName();
         if (!author) return;
         if (editing && author !== editing.author) return toast('내가 올린 도구만 고칠 수 있습니다.');
         const data = {
@@ -497,7 +500,9 @@
 
     return h('div', { class: 'narrow' },
       h('h1', {}, editing ? '도구 고치기' : '도구 올리기'),
-      h('p', { class: 'lead' }, editing
+      h('p', { class: 'lead' }, byAdmin
+        ? `관리자 권한으로 ${editing.author} 선생님의 도구를 고칩니다. 만든 사람은 바뀌지 않습니다.`
+        : editing
         ? '받은 의견을 반영해 내용을 고치세요. 좋아요와 받은 의견은 그대로 남습니다.'
         : '만든 웹앱을 넣고 몇 칸만 채우면 모든 선생님과 공유됩니다.'),
       form);
@@ -565,6 +570,7 @@
       return viewAdmin();
     }
     names.value = accounts.map((a) => a.name).join('\n');
+    const managed = tools.filter((t) => !t.sample);
     return h('div', { class: 'narrow' },
       h('h1', {}, '관리자'),
       h('form', {
@@ -591,6 +597,17 @@
               onclick: () => { if (confirm(`${name} 선생님의 비밀번호를 초기화할까요?`)) act(Store.resetPassword(name).then(() => toast('초기화했습니다.'))); },
             }, '초기화'));
         }))),
+      h('section', { class: 'panel' },
+        h('h2', {}, `올라온 도구 ${managed.length}개`),
+        h('p', { class: 'muted' }, '관리자는 모든 선생님의 도구를 고치거나 삭제할 수 있습니다. 고쳐도 만든 사람은 바뀌지 않습니다.'),
+        managed.length ? h('ul', { class: 'acct-list' }, managed.map((t) => h('li', {},
+          h('span', {}, h('a', { href: '#/tool/' + t.id }, t.title)),
+          h('span', { class: 'muted' }, `${t.author} · ${fmtDate(t.createdAt)}`),
+          h('a', { class: 'btn btn-sm', href: '#/edit/' + t.id }, '고치기'),
+          h('button', {
+            class: 'btn btn-sm btn-danger', type: 'button',
+            onclick: () => { if (confirm(`${t.author} 선생님의 "${t.title}" 도구를 삭제할까요? 받은 의견도 함께 지워지며 되돌릴 수 없습니다.`)) act(Store.deleteTool(t.id)); },
+          }, '삭제')))) : h('p', { class: 'muted' }, '아직 올라온 도구가 없습니다.')),
       h('section', { class: 'panel' },
         h('h2', {}, `신고된 도구 ${reports.length}건`),
         reports.length ? h('ul', { class: 'fb-list' }, reports.map((r) => {

@@ -121,8 +121,9 @@
       dropList();
       return id;
     },
+    // 올린 본인 또는 관리자(관리자 화면에 들어가 있을 때)가 고칠 수 있습니다.
     async updateTool(id, data) {
-      const ok = await asUser('update_tool', { p_id: id, p_data: toolData(data) });
+      const ok = await asUser('update_tool', { p_id: id, p_data: toolData(data), ...(adminToken && { p_admin_token: adminToken }) });
       dropList();
       return ok;
     },

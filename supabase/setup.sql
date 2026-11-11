@@ -309,13 +309,16 @@ begin
   return new_id;
 end $$;
 
--- 올린 본인만 고칠 수 있습니다. 만든 사람·올린 날·좋아요는 그대로 두고 고친 날을 남깁니다.
-create or replace function public.update_tool(p_token text, p_id text, p_data jsonb) returns boolean
+-- 올린 본인(p_token) 또는 관리자(p_admin_token)가 고칠 수 있습니다.
+-- 만든 사람·올린 날·좋아요는 그대로 두고 고친 날을 남깁니다(관리자가 고쳐도 만든 사람은 바뀌지 않음).
+drop function if exists public.update_tool(text, text, jsonb); -- 예전 모양(관리자 인자 없음)을 치웁니다
+create or replace function public.update_tool(p_token text, p_id text, p_data jsonb, p_admin_token text default null) returns boolean
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 declare
+  as_admin boolean := _is_admin(p_admin_token);
   who text := _who(p_token);
 begin
-  if who is null then raise exception 'auth'; end if;
+  if not as_admin and who is null then raise exception 'auth'; end if;
   perform _check_tool(p_data);
   update tools set
     title = trim(p_data->>'title'), summary = trim(p_data->>'summary'), subject = trim(p_data->>'subject'),
@@ -324,7 +327,7 @@ begin
     url = case when p_data->>'kind' = 'link' then p_data->>'url' end,
     html = case when p_data->>'kind' = 'html' then p_data->>'html' end,
     thumb = p_data->>'thumb', updated_at = now()
-  where id = p_id and author = who;
+  where id = p_id and (as_admin or author = who);
   return found;
 end $$;
 

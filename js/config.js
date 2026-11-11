@@ -7,6 +7,6 @@
 // 이 두 값은 방문자 브라우저에 그대로 전달되는 공개 값이라 여기에 적어도 됩니다.
 // 단, "secret" 또는 "service_role" 키는 절대 여기에 적지 마세요. 관리자 비밀번호·가입 코드도 적지 않습니다.
 window.DSMS_CONFIG = {
-  supabaseUrl: '',
-  supabaseKey: '',
+  supabaseUrl: 'https://psiqganfyvsmwhzskjyo.supabase.co',
+  supabaseKey: 'sb_publishable_VcUJQ5ZJK4ldSte0xQa0-g_fket1DYP',
 };
