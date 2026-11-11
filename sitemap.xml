@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 검색 엔진에 알려 주는 페이지 목록입니다. 사이트 주소가 바뀌면 index.html, robots.txt와 함께 고칩니다. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://dsmswebsite.vercel.app/</loc>
+  </url>
+</urlset>

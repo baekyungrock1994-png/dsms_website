@@ -1,0 +1,5 @@
+# 검색 엔진이 사이트를 읽어 가도 된다는 표시입니다.
+User-agent: *
+Allow: /
+
+Sitemap: https://dsmswebsite.vercel.app/sitemap.xml
