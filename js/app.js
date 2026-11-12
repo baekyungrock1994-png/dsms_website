@@ -397,7 +397,39 @@
     drop.addEventListener('drop', (e) => takeFile(e.dataTransfer.files[0]));
 
     const urlInput = h('input', { type: 'url', placeholder: 'https://', 'aria-label': '도구 주소', value: editing?.url });
-    const urlBox = h('div', { hidden: startKind !== 'link' }, urlInput, h('small', { class: 'muted' }, '이미 다른 곳에 올려 둔 웹앱의 주소입니다. 새 탭에서 열립니다.'));
+    // 링크의 제목·소개 문장·대표 그림을 읽어 와 빈칸을 채웁니다(서버 기능 api/preview.js).
+    // 이미 적어 둔 칸은 건드리지 않습니다. '만든 의도'는 선생님이 직접 적는 칸이라 채우지 않습니다.
+    const infoBtn = h('button', { class: 'btn btn-sm', type: 'button', onclick: () => fetchInfo() }, '주소에서 정보 가져오기');
+    async function fetchInfo() {
+      const url = urlInput.value.trim();
+      if (!/^https?:\/\/\S+$/i.test(url)) return toast('http:// 또는 https:// 로 시작하는 주소를 적어 주세요.');
+      if (infoBtn.disabled) return;
+      infoBtn.disabled = true;
+      infoBtn.textContent = '가져오는 중…';
+      try {
+        const res = await fetch('api/preview?url=' + encodeURIComponent(url));
+        if (!res.ok) throw new Error('preview ' + res.status);
+        const info = await res.json();
+        const filled = [];
+        if (info.title && !f.title.value.trim()) { f.title.value = info.title.slice(0, 40); filled.push('제목'); }
+        if (info.description && !f.summary.value.trim()) { f.summary.value = info.description.slice(0, 60); filled.push('한 줄 소개'); }
+        if (info.image && !thumb) { takeImage(await (await fetch(info.image)).blob()); filled.push('썸네일'); }
+        toast(filled.length
+          ? `${filled.join(', ')} 칸을 채웠습니다. 내용을 확인하고 고쳐 주세요.`
+          : '이 주소에서는 가져올 정보를 찾지 못했습니다. 직접 입력해 주세요.');
+      } catch (err) {
+        console.error(err);
+        toast('정보를 가져오지 못했습니다. 직접 입력해 주세요.');
+      } finally {
+        infoBtn.disabled = false;
+        infoBtn.textContent = '주소에서 정보 가져오기';
+      }
+    }
+    urlInput.addEventListener('paste', () => setTimeout(fetchInfo)); // 주소를 붙여 넣으면 바로 가져옵니다
+    const urlBox = h('div', { class: 'url-box', hidden: startKind !== 'link' }, urlInput,
+      h('div', { class: 'row' }, infoBtn,
+        h('small', { class: 'muted' }, '제목·한 줄 소개·썸네일의 빈칸을 채워 줍니다.')),
+      h('small', { class: 'muted' }, '이미 다른 곳에 올려 둔 웹앱의 주소입니다. 새 탭에서 열립니다.'));
     const kindRadio = (value, label, checked) => h('label', { class: 'seg' },
       h('input', { type: 'radio', name: 'kind', value, checked, onchange: () => { drop.hidden = value !== 'html'; urlBox.hidden = value !== 'link'; } }),
       h('span', {}, label));

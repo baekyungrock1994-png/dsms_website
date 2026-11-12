@@ -197,6 +197,9 @@ input:hover, textarea:hover, select:hover { border-color: var(--c-mid); }
 .drop:hover, .drop.over, .drop:focus-within { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .drop.has-file { border-style: solid; border-color: var(--accent); color: var(--text); }
 .drop small { font-weight: 500; }
+.url-box > * + * { margin-top: 8px; }
+.url-box > small { display: block; }
+.btn:disabled { opacity: .6; cursor: default; }
 .note { background: var(--accent-soft); border-radius: 12px; padding: 12px 16px; font-size: .92rem; }
 
 .mine-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
